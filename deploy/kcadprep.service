@@ -1,0 +1,16 @@
+# Kurage 設計下書き（kcadprep）の API。proto.exbridge.jp/kcadprep/ の PHP から http://exbridge.ddns.net:18388 で呼ぶ
+# 置き方: cp deploy/kcadprep.service ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now kcadprep
+[Unit]
+Description=Kurage 設計下書き kcadprep API (:18388)
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/kojima/work/kcadprep/app
+ExecStart=/home/kojima/work/kcadprep/.venv/bin/uvicorn server:app --host 0.0.0.0 --port 18388 --workers 1
+Restart=on-failure
+RestartSec=5
+MemoryMax=8G
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

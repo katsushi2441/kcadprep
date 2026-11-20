@@ -1,0 +1,5 @@
+AddHandler php-script .php
+DirectoryIndex index.php
+<Files "kcadprep_config.php">
+  Require all denied
+</Files>
