@@ -157,7 +157,7 @@ footer .wrap{padding:18px 16px}footer a{color:#7fe0d4}
     <label class="l" for="mat">樹脂（重さと型締め力の目安に使います）</label>
     <select id="mat"><option value="ABS">ABS</option><option value="PP">PP（ポリプロピレン）</option><option value="PC">PC（ポリカーボネート）</option><option value="PA66">PA66（ナイロン）</option><option value="POM">POM（ポリアセタール）</option></select>
     <button class="go" id="go" type="button">設計の下書きを作る</button>
-    <p class="note">Codex で30秒ほどかかります。エラーが出たときや、できた形の大きさが説明と合わないときは、AI がそれを読んで自動で直します。</p>
+    <p class="note">gemma4 で15〜60秒ほど、Codex で30秒ほどかかります。エラーが出たときや、できた形の大きさが説明と合わないときは、AI がそれを読んで自動で直します。</p>
     <div id="err" class="err" style="display:none"></div>
     <ul id="log"></ul>
   </div>

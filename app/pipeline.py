@@ -6,7 +6,7 @@ from pathlib import Path
 import llm
 import sandbox
 
-MAX_TRY = {"gemma": 3, "codex": 2}   # Codex は1回で約1.8万トークン使うので2回まで
+MAX_TRY = {"gemma": 4, "codex": 2}   # Codex は1回で約1.8万トークン使うので2回まで
 
 
 def run_job(job: Path, request: str, engine: str, params: dict, log) -> dict:
@@ -17,7 +17,7 @@ def run_job(job: Path, request: str, engine: str, params: dict, log) -> dict:
         log(f"{n}回目: AI（{'Codex' if engine == 'codex' else 'gemma4'}）がコードを書いています")
         t0 = time.time()
         try:
-            text = llm.ask(engine, llm.build_prompt(request, error, code), str(job))
+            text = llm.ask(engine, llm.build_prompt(request, error, code), str(job), log)
         except Exception as e:
             tries.append({"n": n, "stage": "ai", "error": str(e)[-400:], "sec": round(time.time() - t0, 1)})
             log(f"AI の呼び出しに失敗しました: {str(e)[-200:]}")

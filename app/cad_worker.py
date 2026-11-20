@@ -47,9 +47,16 @@ def as_solid(obj):
     if shape.Volume() <= 1e-6:
         raise ValueError("立体の体積が0です")
     if len(shape.Solids()) > 1:
-        vols = sorted((round(s.Volume(), 1) for s in shape.Solids()), reverse=True)
-        raise ValueError(f"形が{len(vols)}個の離れた立体に分かれています（体積 {vols[:5]} mm3）。"
-                         "ボス・リブ・仕切りが本体（天井や壁）につながっていません。高さや位置を見直して、全部を1つにつなげてください")
+        sols = sorted(shape.Solids(), key=lambda s: -s.Volume())
+
+        def rng(s):   # AI が位置の間違いに気づけるよう、各立体の範囲を数字で返す
+            b = s.BoundingBox()
+            return f"x {b.xmin:.1f}〜{b.xmax:.1f}, y {b.ymin:.1f}〜{b.ymax:.1f}, z {b.zmin:.1f}〜{b.zmax:.1f}"
+        parts = "\n".join(f"- 離れた立体{i}: {rng(s)}（体積 {s.Volume():.0f} mm3）" for i, s in enumerate(sols[1:6], 1))
+        raise ValueError(f"形が{len(sols)}個の離れた立体に分かれています。ボス・リブ・仕切りが本体（天井や壁）につながっていません。\n"
+                         f"- 本体: {rng(sols[0])}\n{parts}\n"
+                         "本体の範囲と比べて、離れた立体の位置（box は中心が原点。translate の量）や高さを直し、"
+                         "壁や天井に 0.5mm ほど重ねて、全部を1つにつなげてください")
     return shape
 
 
