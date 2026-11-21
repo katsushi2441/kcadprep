@@ -127,15 +127,30 @@ def main():
             pz = (bb.zmin + bb.zmax) / 2
         upper = cq.Solid.makeBox(bx, by, ztop - pz, cq.Vector(-bx / 2, -by / 2, pz))
         lower = cq.Solid.makeBox(bx, by, pz - zbot, cq.Vector(-bx / 2, -by / 2, zbot))
-        up = upper.cut(part)
         lo = lower.cut(part)
-        # 上の型から外れた島（箱の内側の空間＝コアの出っ張り）は、下の型に付ける
+        # 成形品の内側の空間（外形の箱から成形品を引き、開口部＝パーティング面に面し、外形の側面に触れない部分）は
+        # コアの出っ張り。先にこれを決めてコアに付ける。穴が天井まで抜けていても、内側の空間は上の型とつながるので、
+        # 「上の型から外れた島だけをコアへ」では内側が丸ごとキャビティに入っていた（2026-11-21、ボスの穴が貫通の箱で発覚）
+        eps = 0.05
+        prism = cq.Solid.makeBox(bb.xlen, bb.ylen, bb.zmax - pz, cq.Vector(bb.xmin, bb.ymin, pz))
+        inner = []
+        for v in prism.cut(part).Solids():
+            vb = v.BoundingBox()
+            if (vb.zmin <= pz + eps and vb.xmin > bb.xmin + eps and vb.xmax < bb.xmax - eps
+                    and vb.ymin > bb.ymin + eps and vb.ymax < bb.ymax - eps):
+                inner.append(v)
+        up = upper.cut(part)
+        core = lo
+        for v in inner:
+            up = up.cut(v)
+            core = core.fuse(v)
+        # それでも上の型から外れた島（内側の窪みなど）は、下の型に付ける
         sols = sorted(up.Solids(), key=lambda s: s.Volume(), reverse=True)
         cavity = sols[0]
-        core = lo
         for s in sols[1:]:
             core = core.fuse(s)
         core = core.clean()
+        metrics["core_inner_cm3"] = round(sum(v.Volume() for v in inner) / 1000, 2)
 
         # ゲート（スプルー）: 型の上から成形品の上面の中心へ、上が太い円すいの穴
         if params.get("gate", True):
