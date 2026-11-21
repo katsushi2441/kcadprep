@@ -84,11 +84,34 @@ def main():
     # 型の中心を原点に寄せる（AI が原点から離れた位置に作っても型を同じ作り方にできるように）
     part = part.translate(cq.Vector(-(bb.xmin + bb.xmax) / 2, -(bb.ymin + bb.ymax) / 2, -bb.zmin))
     bb = part.BoundingBox()
+    # 開口部が上を向いていたら（内側の空間が上の面にだけ通じている）、上下を返して開口部を下（z=0）にそろえる。
+    # AI は決まりを書いても逆さに作ることがあり、外形の大きさは合うので寸法の検査では見つからない（2026-11-21）
+    flipped = False
+    try:
+        eps = 0.05
+        prism = cq.Solid.makeBox(bb.xlen, bb.ylen, bb.zlen, cq.Vector(bb.xmin, bb.ymin, bb.zmin))
+        up_open = down_open = 0.0
+        for v in prism.cut(part).Solids():
+            vb = v.BoundingBox()
+            if vb.xmin > bb.xmin + eps and vb.xmax < bb.xmax - eps and vb.ymin > bb.ymin + eps and vb.ymax < bb.ymax - eps:
+                if vb.zmin <= bb.zmin + eps:
+                    down_open += v.Volume()
+                elif vb.zmax >= bb.zmax - eps:
+                    up_open += v.Volume()
+        if up_open > down_open and up_open > 0.05 * part.Volume():
+            part = part.rotate(cq.Vector(0, 0, 0), cq.Vector(1, 0, 0), 180)
+            b2 = part.BoundingBox()
+            part = part.translate(cq.Vector(0, 0, -b2.zmin))
+            bb = part.BoundingBox()
+            flipped = True
+    except Exception:
+        pass
     export(part, job / "part")
 
     mat = MATERIALS.get(params.get("material", "ABS"), MATERIALS["ABS"])
     vol_mm3 = part.Volume()
     metrics = {
+        "flipped": flipped,   # 開口部を下にそろえるため上下を返したか
         "size": [round(bb.xlen, 2), round(bb.ylen, 2), round(bb.zlen, 2)],
         "volume_cm3": round(vol_mm3 / 1000, 2),
         "material": mat["name"],
